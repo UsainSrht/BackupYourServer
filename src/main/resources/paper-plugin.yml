@@ -1,0 +1,16 @@
+name: BackupYourServer
+version: '${version}'
+main: me.usainsrht.backupyourserver.BackupYourServerPlugin
+description: Asynchronous server backup plugin with configurable compression methods
+author: usainsrht
+api-version: '26.2'
+folia-supported: true
+bootstrapper: me.usainsrht.backupyourserver.loader.BackupYourServerBootstrap
+loader: me.usainsrht.backupyourserver.loader.BackupYourServerLoader
+
+dependencies:
+  server:
+    MiniPlaceholders:
+      load: BEFORE
+      required: false
+      join-classpath: true

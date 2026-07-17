@@ -1,0 +1,162 @@
+# BackupYourServer configuration
+
+default-backup-method: tar+zstd
+source-directory: .
+backup-directory: backups
+
+blacklisted-extensions:
+  - .tmp
+  - .lock
+  - .journal
+  - .jar
+
+blacklisted-regexes:
+  - '(?i)(^|/)cache(/|$)'
+  - '(?i)(^|/)versions(/|$)'
+  - '(?i)(^|/)libraries(/|$)'
+  - '(?i)(^|/)plugins/\.paper-remapped(/|$)'
+  - '(?i).*session\.lock'
+
+blacklisted-paths:
+  - backups
+  - backups/
+  - cache
+  - versions
+  - libraries
+  - plugins/.paper-remapped
+
+bossbar:
+  enabled: true
+  permission: backupyourserver.bossbar
+  color: BLUE
+  style: PROGRESS
+  text: '<aqua>Backup <backupyourserver_progress>% <dark_gray>| <yellow><backupyourserver_eta> <backupyourserver_eta_long> <dark_gray>| <white><backupyourserver_files> <dark_gray>| <gray><backupyourserver_current_file>'
+
+# Backup methods grouped by speed vs disk space trade-offs.
+backup-methods:
+  # Fastest methods (lower CPU time, larger archives)
+  lz4:
+    enabled: true
+    executable: lz4
+    compression-level: 1
+    thread-count: 1
+    extra-args: ''
+  pigz:
+    enabled: true
+    executable: pigz
+    compression-level: 6
+    thread-count: 4
+    extra-args: ''
+  tar+gzip:
+    enabled: true
+    executable: gzip
+    compression-level: 6
+    thread-count: 1
+    extra-args: ''
+
+  # Balanced methods
+  tar+zstd:
+    enabled: true
+    executable: zstd
+    compression-level: 3
+    thread-count: 4
+    extra-args: ''
+
+  # Smaller / disk space methods (slower, smaller archives)
+  xz:
+    enabled: true
+    executable: xz
+    compression-level: 6
+    thread-count: 4
+    extra-args: ''
+  pixz:
+    enabled: true
+    executable: pixz
+    compression-level: 6
+    thread-count: 4
+    extra-args: ''
+  7z:
+    enabled: true
+    executable: 7z
+    compression-level: 5
+    thread-count: 4
+    extra-args: ''
+  7za:
+    enabled: false
+    executable: 7za
+    compression-level: 5
+    thread-count: 4
+    extra-args: ''
+
+messages:
+  command-usage:
+    chat-messages:
+      - '<yellow>Usage: <white>/backup start [method]<gray>, <white>/backup stop<gray>, <white>/backup list<gray>, <white>/backup status<gray>, <white>/backup reload'
+  backup-started:
+    chat-messages:
+      - '<green>Backup started using <white><backupyourserver_method><green>.'
+    action-bar: '<yellow>Backup in progress... <backupyourserver_progress>%'
+    sounds:
+      - key: minecraft:entity.experience_orb.pickup
+        volume: 1.0
+        pitch: 1.0
+    title:
+      title: '<gold>Backup Started'
+      subtitle: '<gray>Method: <white><backupyourserver_method>'
+      times:
+        fade-in: 10
+        stay: 40
+        fade-out: 10
+  backup-completed:
+    chat-messages:
+      - '<green>Backup completed: <white><backupyourserver_last_archive>'
+    action-bar: '<green>Backup completed.'
+    sounds:
+      - key: minecraft:entity.player.levelup
+        volume: 1.0
+        pitch: 1.2
+  backup-failed:
+    chat-messages:
+      - '<red>Backup failed. Check console logs for details.'
+    action-bar: '<red>Backup failed.'
+    sounds:
+      - key: minecraft:entity.villager.no
+        volume: 1.0
+        pitch: 0.8
+  backup-cancelled:
+    chat-messages:
+      - '<yellow>Backup cancelled.'
+    action-bar: '<yellow>Backup cancelled.'
+  backup-already-running:
+    chat-messages:
+      - '<red>A backup is already running.'
+  backup-not-running:
+    chat-messages:
+      - '<red>No backup is currently running.'
+  backup-stop-requested:
+    chat-messages:
+      - '<yellow>Backup stop requested.'
+  backup-method-disabled:
+    chat-messages:
+      - '<red>That backup method is disabled or missing from config.'
+  backup-list-header:
+    chat-messages:
+      - '<gold>Available backups:'
+  backup-list-empty:
+    chat-messages:
+      - '<gray>No backups found.'
+  backup-list-failed:
+    chat-messages:
+      - '<red>Unable to read backup directory.'
+  backup-status-header:
+    chat-messages:
+      - '<gold>BackupYourServer Status'
+  backup-status-idle:
+    chat-messages:
+      - '<gray>Running: <red>No'
+  backup-status-methods-header:
+    chat-messages:
+      - '<gold>Enabled methods:'
+  reload-success:
+    chat-messages:
+      - '<green>BackupYourServer config reloaded.'
