@@ -170,7 +170,12 @@ public final class BackupTask implements Runnable {
         reportProgress(tracker.snapshot());
 
         final AtomicLong lastProgressReport = new AtomicLong(System.nanoTime());
-        final java.util.List<String> tarMessages = new java.util.ArrayList<>();
+        final ArchiveWarningParser warningParser = new ArchiveWarningParser(
+                sourceRoot,
+                "[" + method.id() + "] ",
+                logger
+        );
+        final java.util.List<String> archiveMessages = new java.util.ArrayList<>();
         try (var reader = activeProcess.inputReader()) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -180,32 +185,40 @@ public final class BackupTask implements Runnable {
                     return;
                 }
 
-                if (isTarWarningLine(line)) {
-                    logger.warning("[tar] " + line.trim());
-                    tarMessages.add(line.trim());
-                }
-
-                final String processedFile = parseProcessedFile(line);
-                if (processedFile != null) {
-                    tracker.onFileProcessed(processedFile);
-                    reportProgressThrottled(tracker, lastProgressReport);
+                if (ArchiveWarningParser.isArchiveWarningLine(line)) {
+                    warningParser.onLine(line);
+                    archiveMessages.add(line.trim());
+                } else if (!warningParser.onLine(line)) {
+                    final String processedFile = parseProcessedFile(line);
+                    if (processedFile != null) {
+                        warningParser.onProcessedFile(processedFile);
+                        tracker.onFileProcessed(processedFile);
+                        reportProgressThrottled(tracker, lastProgressReport);
+                    }
                 }
 
                 logger.fine(line);
             }
         }
+        warningParser.flush();
 
         final int exitCode = activeProcess.waitFor();
         final boolean archiveCreated = Files.isRegularFile(archiveTarget) && Files.size(archiveTarget) > 0L;
         if (exitCode != 0) {
             if (exitCode == 1 && archiveCreated) {
-                logger.warning(method.id() + " archive stage completed with warnings (exit code 1). "
-                        + "Some files may have been skipped.");
+                final int skippedCount = warningParser.inaccessibleFiles().size();
+                if (skippedCount > 0) {
+                    logger.warning(method.id() + " archive stage completed with warnings (exit code 1). "
+                            + skippedCount + " file(s) could not be accessed.");
+                } else {
+                    logger.warning(method.id() + " archive stage completed with warnings (exit code 1). "
+                            + "Some files may have been skipped.");
+                }
                 return;
             }
 
-            if (!tarMessages.isEmpty()) {
-                logger.severe("tar output: " + String.join(" | ", tarMessages));
+            if (!archiveMessages.isEmpty()) {
+                logger.severe(method.id() + " archive output: " + String.join(" | ", archiveMessages));
             }
             failureReason = method.id() + " archive stage exited with code " + exitCode;
             logger.severe(failureReason);
@@ -215,24 +228,6 @@ public final class BackupTask implements Runnable {
             }
             throw new IOException(failureReason);
         }
-    }
-
-    private static boolean isTarWarningLine(final String line) {
-        if (line == null) {
-            return false;
-        }
-
-        final String trimmed = line.trim();
-        if (trimmed.isEmpty()) {
-            return false;
-        }
-
-        final String lower = trimmed.toLowerCase(java.util.Locale.ROOT);
-        return trimmed.startsWith("tar:")
-                || lower.contains("couldn't")
-                || lower.contains("permission denied")
-                || lower.contains("error exit")
-                || lower.contains("warning");
     }
 
     private void runCompressStage(

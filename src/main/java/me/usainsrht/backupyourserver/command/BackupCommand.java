@@ -18,6 +18,7 @@ import me.usainsrht.backupyourserver.config.PluginConfig;
 import me.usainsrht.backupyourserver.message.Message;
 import me.usainsrht.backupyourserver.message.MessageSender;
 import me.usainsrht.backupyourserver.placeholder.BackupPlaceholders;
+import me.usainsrht.backupyourserver.util.DurationFormatter;
 import me.usainsrht.backupyourserver.util.SchedulerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -26,6 +27,8 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.CommandSender;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 public final class BackupCommand {
@@ -61,6 +64,8 @@ public final class BackupCommand {
                         .executes(context -> stopBackup(plugin, context)))
                 .then(Commands.literal("list")
                         .executes(context -> listBackups(plugin, context)))
+                .then(Commands.literal("time")
+                        .executes(context -> showNextBackupTime(plugin, context)))
                 .then(Commands.literal("status")
                         .executes(context -> showStatus(plugin, context)))
                 .then(Commands.literal("reload")
@@ -121,6 +126,7 @@ public final class BackupCommand {
                 ));
                 BackupPlaceholders.updateLastArchive(session.outputArchive().getFileName().toString());
                 send(config.message("backup-completed"), sender);
+                plugin.retentionService().cleanup(config);
             } else if (session.cancelled().get()) {
                 BackupPlaceholders.updateStatus("cancelled");
                 send(config.message("backup-cancelled"), sender);
@@ -168,7 +174,7 @@ public final class BackupCommand {
         SchedulerUtil.runAsync(plugin, () -> {
             try {
                 final List<BackupInfo> backups = plugin.backupManager().listBackups(config);
-                SchedulerUtil.runGlobal(plugin, () -> renderBackupList(sender, config, backups));
+                SchedulerUtil.runGlobal(plugin, () -> renderBackupList(plugin, sender, config, backups));
             } catch (final IOException exception) {
                 SchedulerUtil.runGlobal(plugin, () -> {
                     send(config.message("backup-list-failed"), sender);
@@ -177,6 +183,32 @@ public final class BackupCommand {
             }
         });
 
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int showNextBackupTime(
+            final BackupYourServerPlugin plugin,
+            final CommandContext<CommandSourceStack> context
+    ) {
+        final CommandSender sender = context.getSource().getSender();
+        final PluginConfig config = plugin.config();
+
+        if (!config.scheduledBackupSettings().enabled()) {
+            send(config.message("backup-time-disabled"), sender);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        final Instant nextRun = plugin.schedulerService().nextRunAt();
+        if (nextRun == null) {
+            send(config.message("backup-time-unavailable"), sender);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        final Duration remaining = Duration.between(Instant.now(), nextRun);
+        sender.sendMessage(MINI_MESSAGE.deserialize(
+                "<gray>Next automatic backup in <white>" + escapeMiniMessage(DurationFormatter.format(remaining))
+                        + " <dark_gray>(" + escapeMiniMessage(BackupManager.formatTimestamp(nextRun)) + ")"
+        ));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -301,6 +333,7 @@ public final class BackupCommand {
     }
 
     private static void renderBackupList(
+            final BackupYourServerPlugin plugin,
             final CommandSender sender,
             final PluginConfig config,
             final List<BackupInfo> backups
@@ -311,14 +344,26 @@ public final class BackupCommand {
         }
 
         send(config.message("backup-list-header"), sender);
-        for (final BackupInfo backup : backups) {
+        final Instant now = Instant.now();
+        for (int index = 0; index < backups.size(); index++) {
+            final BackupInfo backup = backups.get(index);
+            final Instant deletionAt = plugin.retentionService().computeDeletionAt(backup, index, config, now);
+            final String deletionText = formatDeletionText(deletionAt, now);
             sender.sendMessage(MINI_MESSAGE.deserialize(
                     "<gray>- <white>" + backup.fileName()
                             + " <dark_gray>(" + backup.method().id()
                             + ", " + BackupManager.formatSize(backup.sizeBytes())
-                            + ", " + BackupManager.formatTimestamp(backup.createdAt()) + ")"
+                            + ", " + BackupManager.formatTimestamp(backup.createdAt())
+                            + ", delete in <yellow>" + escapeMiniMessage(deletionText) + "<dark_gray>)"
             ));
         }
+    }
+
+    private static String formatDeletionText(final Instant deletionAt, final Instant now) {
+        if (deletionAt == null) {
+            return "never";
+        }
+        return DurationFormatter.format(Duration.between(now, deletionAt));
     }
 
     private static void send(final Message message, final CommandSender sender) {

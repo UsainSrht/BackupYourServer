@@ -36,7 +36,7 @@ final class BackupFileListSanitizer {
 
             skipped++;
             tracker.removeFile(relativePath);
-            logger.warning("Skipping unreadable or missing file: " + relativePath);
+            logger.warning("Skipping unreadable or missing file: " + absolutePath.toAbsolutePath().normalize());
         }
 
         if (keptPaths.isEmpty()) {

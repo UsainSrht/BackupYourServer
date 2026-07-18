@@ -1,5 +1,6 @@
 package me.usainsrht.backupyourserver.util;
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,8 +19,8 @@ public final class SchedulerUtil {
         Bukkit.getAsyncScheduler().runNow(plugin, scheduledTask -> task.run());
     }
 
-    public static void runAsyncDelayed(final JavaPlugin plugin, final Runnable task, final long delayMillis) {
-        Bukkit.getAsyncScheduler().runDelayed(plugin, scheduledTask -> task.run(), delayMillis, TimeUnit.MILLISECONDS);
+    public static ScheduledTask runAsyncDelayed(final JavaPlugin plugin, final Runnable task, final long delayMillis) {
+        return Bukkit.getAsyncScheduler().runDelayed(plugin, scheduledTask -> task.run(), delayMillis, TimeUnit.MILLISECONDS);
     }
 
     public static void runGlobalRepeating(

@@ -180,7 +180,7 @@ final class CompressionCommandBuilder {
         final List<String> command = new ArrayList<>();
         command.add(settings.executable());
         command.add("a");
-        command.add("-bb1");
+        command.add("-bb2");
         command.add("-t7z");
         command.add("-mx=" + settings.compressionLevel());
         if (settings.threadCount() > 0) {

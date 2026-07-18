@@ -2,6 +2,8 @@ package me.usainsrht.backupyourserver;
 
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import me.usainsrht.backupyourserver.backup.BackupManager;
+import me.usainsrht.backupyourserver.backup.BackupRetentionService;
+import me.usainsrht.backupyourserver.backup.BackupSchedulerService;
 import me.usainsrht.backupyourserver.bossbar.BackupBossBarService;
 import me.usainsrht.backupyourserver.command.BackupCommand;
 import me.usainsrht.backupyourserver.config.PluginConfig;
@@ -19,6 +21,8 @@ public final class BackupYourServerPlugin extends JavaPlugin {
 
     private PluginConfig pluginConfig;
     private BackupManager backupManager;
+    private BackupRetentionService retentionService;
+    private BackupSchedulerService schedulerService;
     private BackupBossBarService bossBarService;
 
     public static BackupYourServerPlugin getInstance() {
@@ -33,11 +37,16 @@ public final class BackupYourServerPlugin extends JavaPlugin {
         reloadLocalConfig();
 
         backupManager = new BackupManager(this);
+        retentionService = new BackupRetentionService(this, backupManager);
+        schedulerService = new BackupSchedulerService(this, backupManager, retentionService);
         BackupPlaceholders.bind(backupManager);
 
         bossBarService = new BackupBossBarService(this);
         bossBarService.reload(pluginConfig.bossBarSettings());
         bossBarService.startUpdater();
+
+        schedulerService.start();
+        retentionService.cleanup(pluginConfig);
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             event.registrar().register(
@@ -53,6 +62,9 @@ public final class BackupYourServerPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (schedulerService != null) {
+            schedulerService.shutdown();
+        }
         if (backupManager != null && backupManager.isRunning()) {
             backupManager.stop();
         }
@@ -70,6 +82,12 @@ public final class BackupYourServerPlugin extends JavaPlugin {
         if (bossBarService != null) {
             bossBarService.reload(pluginConfig.bossBarSettings());
         }
+        if (schedulerService != null) {
+            schedulerService.reload(pluginConfig);
+        }
+        if (retentionService != null) {
+            retentionService.cleanup(pluginConfig);
+        }
     }
 
     public PluginConfig config() {
@@ -82,5 +100,13 @@ public final class BackupYourServerPlugin extends JavaPlugin {
 
     public BackupBossBarService bossBarService() {
         return bossBarService;
+    }
+
+    public BackupSchedulerService schedulerService() {
+        return schedulerService;
+    }
+
+    public BackupRetentionService retentionService() {
+        return retentionService;
     }
 }

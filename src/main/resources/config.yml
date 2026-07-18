@@ -4,6 +4,29 @@ default-backup-method: tar+zstd
 source-directory: .
 backup-directory: backups
 
+scheduled-backup:
+  enabled: false
+  method: tar+zstd
+  # interval: every X hours/days | daily: at HH:MM every day | weekly: at HH:MM on a weekday
+  mode: interval
+  interval:
+    value: 6
+    unit: hours
+  time:
+    hour: 3
+    minute: 0
+  day-of-week: monday
+
+backup-retention:
+  enabled: false
+  max-age:
+    enabled: true
+    value: 7
+    unit: days
+  keep-last:
+    enabled: true
+    count: 10
+
 blacklisted-extensions:
   - .tmp
   - .lock
@@ -91,7 +114,7 @@ backup-methods:
 messages:
   command-usage:
     chat-messages:
-      - '<yellow>Usage: <white>/backup start [method]<gray>, <white>/backup stop<gray>, <white>/backup list<gray>, <white>/backup status<gray>, <white>/backup reload'
+      - '<yellow>Usage: <white>/backup start [method]<gray>, <white>/backup stop<gray>, <white>/backup list<gray>, <white>/backup time<gray>, <white>/backup status<gray>, <white>/backup reload'
   backup-started:
     chat-messages:
       - '<green>Backup started using <white><backupyourserver_method><green>.'
@@ -148,6 +171,12 @@ messages:
   backup-list-failed:
     chat-messages:
       - '<red>Unable to read backup directory.'
+  backup-time-disabled:
+    chat-messages:
+      - '<gray>Automatic backups are disabled.'
+  backup-time-unavailable:
+    chat-messages:
+      - '<gray>Next automatic backup time is not available yet.'
   backup-status-header:
     chat-messages:
       - '<gold>BackupYourServer Status'
