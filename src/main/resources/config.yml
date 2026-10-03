@@ -114,7 +114,7 @@ backup-methods:
 messages:
   command-usage:
     chat-messages:
-      - '<yellow>Usage: <white>/backup start [method]<gray>, <white>/backup stop<gray>, <white>/backup list<gray>, <white>/backup time<gray>, <white>/backup status<gray>, <white>/backup reload'
+      - '<yellow>Usage: <white>/backup start [method]<gray>, <white>/backup stop<gray>, <white>/backup list<gray>, <white>/backup time<gray>, <white>/backup status<gray>, <white>/backup storage [view]<gray>, <white>/backup reload'
   backup-started:
     chat-messages:
       - '<green>Backup started using <white><backupyourserver_method><green>.'
@@ -189,3 +189,9 @@ messages:
   reload-success:
     chat-messages:
       - '<green>BackupYourServer config reloaded.'
+  storage-calculating:
+    chat-messages:
+      - '<gray>Analyzing server storage, please wait...'
+  storage-failed:
+    chat-messages:
+      - '<red>Failed to inspect server storage. Check console logs for details.'

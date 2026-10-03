@@ -14,3 +14,14 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+
+permissions:
+  backupyourserver.use:
+    description: Allows using basic backup and storage commands
+    default: op
+  backupyourserver.storage:
+    description: Allows viewing server and machine storage breakdowns
+    default: op
+  backupyourserver.reload:
+    description: Allows reloading the plugin configuration
+    default: op

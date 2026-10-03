@@ -24,6 +24,7 @@ public final class BackupYourServerPlugin extends JavaPlugin {
     private BackupRetentionService retentionService;
     private BackupSchedulerService schedulerService;
     private BackupBossBarService bossBarService;
+    private me.usainsrht.backupyourserver.storage.StorageInspectionService storageService;
 
     public static BackupYourServerPlugin getInstance() {
         return instance;
@@ -39,6 +40,7 @@ public final class BackupYourServerPlugin extends JavaPlugin {
         backupManager = new BackupManager(this);
         retentionService = new BackupRetentionService(this, backupManager);
         schedulerService = new BackupSchedulerService(this, backupManager, retentionService);
+        storageService = new me.usainsrht.backupyourserver.storage.StorageInspectionService(this);
         BackupPlaceholders.bind(backupManager);
 
         bossBarService = new BackupBossBarService(this);
@@ -53,6 +55,11 @@ public final class BackupYourServerPlugin extends JavaPlugin {
                     BackupCommand.build(this).build(),
                     "Manage asynchronous server backups",
                     List.of("bys", "backup")
+            );
+            event.registrar().register(
+                    me.usainsrht.backupyourserver.command.StorageCommand.build(this).build(),
+                    "Inspect machine and server storage tree breakdown",
+                    List.of("storage", "diskspace")
             );
         });
 
@@ -108,5 +115,9 @@ public final class BackupYourServerPlugin extends JavaPlugin {
 
     public BackupRetentionService retentionService() {
         return retentionService;
+    }
+
+    public me.usainsrht.backupyourserver.storage.StorageInspectionService storageService() {
+        return storageService;
     }
 }

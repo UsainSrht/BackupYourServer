@@ -68,6 +68,36 @@ public final class BackupCommand {
                         .executes(context -> showNextBackupTime(plugin, context)))
                 .then(Commands.literal("status")
                         .executes(context -> showStatus(plugin, context)))
+                .then(Commands.literal("storage")
+                        .requires(source -> StorageCommand.hasPermission(source.getSender()))
+                        .executes(context -> StorageCommand.executeStorage(plugin, context, null))
+                        .then(Commands.argument("view", StringArgumentType.word())
+                                .suggests(StorageCommand.STORAGE_SUGGESTIONS)
+                                .executes(context -> StorageCommand.executeStorage(
+                                        plugin,
+                                        context,
+                                        StringArgumentType.getString(context, "view")
+                                ))))
+                .then(Commands.literal("disk")
+                        .requires(source -> StorageCommand.hasPermission(source.getSender()))
+                        .executes(context -> StorageCommand.executeStorage(plugin, context, null))
+                        .then(Commands.argument("view", StringArgumentType.word())
+                                .suggests(StorageCommand.STORAGE_SUGGESTIONS)
+                                .executes(context -> StorageCommand.executeStorage(
+                                        plugin,
+                                        context,
+                                        StringArgumentType.getString(context, "view")
+                                ))))
+                .then(Commands.literal("space")
+                        .requires(source -> StorageCommand.hasPermission(source.getSender()))
+                        .executes(context -> StorageCommand.executeStorage(plugin, context, null))
+                        .then(Commands.argument("view", StringArgumentType.word())
+                                .suggests(StorageCommand.STORAGE_SUGGESTIONS)
+                                .executes(context -> StorageCommand.executeStorage(
+                                        plugin,
+                                        context,
+                                        StringArgumentType.getString(context, "view")
+                                ))))
                 .then(Commands.literal("reload")
                         .requires(source -> source.getSender().hasPermission("backupyourserver.reload"))
                         .executes(context -> reloadConfig(plugin, context)))

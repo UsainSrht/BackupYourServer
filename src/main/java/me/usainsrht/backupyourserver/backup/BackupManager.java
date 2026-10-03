@@ -147,13 +147,17 @@ public final class BackupManager {
         }
         final double kilobytes = bytes / 1024.0D;
         if (kilobytes < 1024) {
-            return String.format("%.1f KB", kilobytes);
+            return String.format(java.util.Locale.ROOT, "%.1f KB", kilobytes);
         }
         final double megabytes = kilobytes / 1024.0D;
         if (megabytes < 1024) {
-            return String.format("%.1f MB", megabytes);
+            return String.format(java.util.Locale.ROOT, "%.1f MB", megabytes);
         }
-        return String.format("%.2f GB", megabytes / 1024.0D);
+        final double gigabytes = megabytes / 1024.0D;
+        if (gigabytes < 1024) {
+            return String.format(java.util.Locale.ROOT, "%.2f GB", gigabytes);
+        }
+        return String.format(java.util.Locale.ROOT, "%.2f TB", gigabytes / 1024.0D);
     }
 
     public static final class BackupSession {
